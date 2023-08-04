@@ -7,7 +7,6 @@ def main():
     from sklearn import metrics
     from sklearn.model_selection import train_test_split
 
-    nltk.download("stopwords")
     from nltk.corpus import stopwords
     from nltk.stem.snowball import SnowballStemmer
 

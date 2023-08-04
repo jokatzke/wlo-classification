@@ -13,7 +13,7 @@ setup(
     package_dir={"": "src"},
     entry_points={
         "console_scripts": [
-            "webservice = webservice:main",
+            "wlo-classification = webservice:main",
             "training = training:main",
         ]
     },
