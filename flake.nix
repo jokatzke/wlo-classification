@@ -1,50 +1,59 @@
 {
   description = "A Python package defined as a Nix Flake";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
+  };
 
-  outputs = { self, nixpkgs, ... }:
-    let
-      system = "x86_64-linux";
-      projectDir = self;
-      # import the packages from nixpkgs
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-      };
-      # the python version we are using
-      python = pkgs.python310;
+  outputs = { self, nixpkgs, flake-utils, ... }:
+    {
+      # define an overlay to add wlo-classification to nixpkgs
+      overlays.default = (final: prev: {
+        inherit (self.packages.${final.system}) wlo-classification;
+      });
+    } //
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        projectDir = self;
+        # import the packages from nixpkgs
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+        # the python version we are using
+        python = pkgs.python310;
 
-      ### create the python installation for the package
-      python-packages-build = py-pkgs:
-        with py-pkgs; [jupyter
-                       numpy
-                       scikit-learn
-                       pandas
-                       seaborn
-                       nltk
-                       tensorflow
-                       tensorflow-datasets
-                       cherrypy
-                       transformers
-                       keras
-                      ];
+        ### create the python installation for the package
+        python-packages-build = py-pkgs:
+          with py-pkgs; [jupyter
+                         numpy
+                         scikit-learn
+                         pandas
+                         seaborn
+                         nltk
+                         tensorflow
+                         tensorflow-datasets
+                         cherrypy
+                         transformers
+                         keras
+                        ];
 
-      ### create the python installation for development
-      # the development installation contains all build packages,
-      # plus some additional ones we do not need to include in production.
-      python-packages-devel = py-pkgs:
-        with py-pkgs; [ipython
-                       jupyter
-                       black
-                      ] ++ (python-packages-build py-pkgs);
+        ### create the python installation for development
+        # the development installation contains all build packages,
+        # plus some additional ones we do not need to include in production.
+        python-packages-devel = py-pkgs:
+          with py-pkgs; [ipython
+                         jupyter
+                         black
+                        ] ++ (python-packages-build py-pkgs);
 
-      ### create the python package
-      # fetch an external resource for NLTK
-      nltk-stopwords = pkgs.fetchzip {
-        url = "https://github.com/nltk/nltk_data/raw/5db857e6f7df11eabb5e5665836db9ec8df07e28/packages/corpora/stopwords.zip";
-        sha256 = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
-      };
+        ### create the python package
+        # fetch an external resource for NLTK
+        nltk-stopwords = pkgs.fetchzip {
+          url = "https://github.com/nltk/nltk_data/raw/5db857e6f7df11eabb5e5665836db9ec8df07e28/packages/corpora/stopwords.zip";
+          sha256 = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
+        };
 
         # download the metadata on the bert language model being used
         gbert-base = pkgs.fetchgit {
@@ -96,37 +105,37 @@
                 "deepset/gbert-base" \
                 "${gbert-base}"
         '';
-      };
-      
-      ### build the docker image
-      docker-img = pkgs.dockerTools.buildLayeredImage {
-        name = python-app.pname;
-        tag = python-app.version;
-        config = {
-          Cmd = [ "${python-app}/bin/wlo-classification" ];
         };
-      };
+        
+        ### build the docker image
+        docker-img = pkgs.dockerTools.buildLayeredImage {
+          name = python-app.pname;
+          tag = python-app.version;
+          config = {
+            Cmd = [ "${python-app}/bin/wlo-classification" ];
+          };
+        };
 
-    in rec {
-      # the packages that we can build
-      packages.${system} = rec {
-        wlo-classification = python-app;
-        docker = docker-img;
-        default = wlo-classification;
-      };
-      # the development environment
-      devShells.${system}.default = pkgs.mkShell {
-        buildInputs = [
-          # the development installation of python
-          (python.withPackages python-packages-devel)
-          # non-python packages
-          pkgs.nodePackages.pyright
-          # for automatically generating nix expressions, e.g. from PyPi
-          pkgs.nix-init
-          pkgs.nix-template
+      in rec {
+        # the packages that we can build
+        packages = rec {
+          wlo-classification = python-app;
+          docker = docker-img;
+          default = wlo-classification;
+        };
+        # the development environment
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            # the development installation of python
+            (python.withPackages python-packages-devel)
+            # non-python packages
+            pkgs.nodePackages.pyright
+            # for automatically generating nix expressions, e.g. from PyPi
+            pkgs.nix-init
+            pkgs.nix-template
 
-          pkgs.git-lfs
-        ];
-      };
-    };
+            pkgs.git-lfs
+          ];
+        };
+      });
 }
