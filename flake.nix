@@ -96,14 +96,11 @@
           # replace cli argument with local file
           prePatch = ''
             substituteInPlace src/webservice.py \
-              --replace \
-                "sys.argv[1]" \
-                "\"${wlo-classification-model}\""
+              --replace "args.model" "\"${wlo-classification-model}\"" \
+              --replace "parser.add_argument(\"model\")" ""
   
             substituteInPlace src/*.py \
-              --replace \
-                "deepset/gbert-base" \
-                "${gbert-base}"
+              --replace "deepset/gbert-base" "${gbert-base}"
         '';
         };
         
