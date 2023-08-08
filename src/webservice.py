@@ -1,6 +1,7 @@
 import cherrypy, json, sys
 
 from predict import Prediction
+from _version import __version__
 
 r = None
 
@@ -11,9 +12,7 @@ class WebService(object):
     @cherrypy.tools.json_in()
     def predict_subjects(self):
         data = cherrypy.request.json
-        print(data)
-        output = r.run(data["text"])
-        return output
+        return {"disciplines": r.run(data["text"]), "version": __version__}
 
 
 def main():

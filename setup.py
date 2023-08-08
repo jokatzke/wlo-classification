@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from setuptools import setup
+from src._version import __version__
 
 setup(
     name="wlo-classification",
