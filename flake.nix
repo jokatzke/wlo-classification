@@ -133,8 +133,6 @@
             # for automatically generating nix expressions, e.g. from PyPi
             pkgs.nix-init
             pkgs.nix-template
-
-            pkgs.git-lfs
           ];
         };
       });
