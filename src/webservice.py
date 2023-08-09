@@ -9,8 +9,6 @@ from _version import __version__
 
 app = FastAPI()
 
-r = None
-
 
 class Data(BaseModel):
     text: str
@@ -56,7 +54,7 @@ def main():
     modelFile = args.model
     prediction = Prediction(modelFile)
 
-    @app.post("/prediction-subjects")
+    @app.post("/predict_subjects")
     def predict_subjects(data: Data) -> Result:
         return Result(disciplines=prediction.run(data.text))
 
