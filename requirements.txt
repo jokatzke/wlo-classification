@@ -6,6 +6,8 @@ seaborn
 nltk
 tensorflow
 tensorflow_datasets
-cherrypy
+fastapi
+pydantic
+uvicorn
 transformers
 keras

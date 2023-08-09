@@ -34,7 +34,9 @@
                          nltk
                          tensorflow
                          tensorflow-datasets
-                         cherrypy
+                         fastapi
+                         pydantic
+                         uvicorn
                          transformers
                          keras
                         ];

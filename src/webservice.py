@@ -1,24 +1,29 @@
 import argparse
 
-import cherrypy, json, sys
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from predict import Prediction
 from _version import __version__
 
+app = FastAPI()
+
 r = None
 
 
-class WebService(object):
-    @cherrypy.expose
-    def _ping(self):
-        pass
+class Data(BaseModel):
+    text: str
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    @cherrypy.tools.json_in()
-    def predict_subjects(self):
-        data = cherrypy.request.json
-        return {"disciplines": r.run(data["text"]), "version": __version__}
+
+class Result(BaseModel):
+    disciplines: list[tuple[str, float]]
+    version: str = __version__
+
+
+@app.get("/_ping")
+def _ping():
+    pass
 
 
 def main():
@@ -49,14 +54,13 @@ def main():
     args = parser.parse_args()
 
     modelFile = args.model
+    prediction = Prediction(modelFile)
 
-    global r
-    r = Prediction(modelFile)
+    @app.post("/prediction-subjects")
+    def predict_subjects(data: Data) -> Result:
+        return Result(disciplines=prediction.run(data.text))
 
-    # start the cherrypy service using the passed arguments
-    cherrypy.server.socket_host = args.host
-    cherrypy.server.socket_port = args.port
-    cherrypy.quickstart(WebService())
+    uvicorn.run("webservice:app", host=args.host, port=args.port, reload=False)
 
 
 if __name__ == "__main__":
