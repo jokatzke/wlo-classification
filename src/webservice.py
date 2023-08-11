@@ -14,8 +14,13 @@ class Data(BaseModel):
     text: str
 
 
+class Discipline(BaseModel):
+    id: str
+    score: float
+
+
 class Result(BaseModel):
-    disciplines: list[tuple[str, float]]
+    disciplines: list[Discipline]
     version: str = __version__
 
 
@@ -55,8 +60,12 @@ def main():
     prediction = Prediction(modelFile)
 
     @app.post("/predict_subjects")
-    def predict_subjects(data: Data) -> Result:
-        return Result(disciplines=prediction.run(data.text))
+    def predict_subjects_kidra(data: Data) -> Result:
+        disciplines_raw = prediction.run(data.text)
+        disciplines = [
+            Discipline(id=result[0], score=result[1]) for result in disciplines_raw
+        ]
+        return Result(disciplines=disciplines)
 
     uvicorn.run("webservice:app", host=args.host, port=args.port, reload=False)
 

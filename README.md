@@ -38,7 +38,7 @@ sh runTraining.sh
 sh runPrediction.sh "Der Satz des Pythagoras lautet: a^2 + b^2 = c^2."
 ```
 
-The result is a list of tuples of a score and its corresponding class name (name of discipline). Only the top three items are retrieved, in descending order.
+The result is a list of dictionaries, each containing the id of a predicted discipline and its score. Only the top three items are retrieved, in descending order.
 
 ## Webservice
 
