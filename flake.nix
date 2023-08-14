@@ -4,6 +4,14 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    openapi-checks = {
+      url = "git+https://codeberg.org/joka/nix-openapi-checks";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-unstable.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, ... }:
@@ -21,6 +29,8 @@
           inherit system;
           config.allowUnfree = true;
         };
+        openapi-checks = self.inputs.openapi-checks.lib.${system};
+        
         # the python version we are using
         python = pkgs.python310;
 
@@ -133,6 +143,13 @@
             pkgs.nix-init
             pkgs.nix-template
           ];
+        };
+        # checks
+        checks = {
+          openapi-valid = openapi-checks.openapi-valid {
+            web-bin = "${self.packages.${system}.wlo-classification}/bin/wlo-classification";
+            memorySize = 4096;
+          };
         };
       });
 }
