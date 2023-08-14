@@ -13,7 +13,7 @@
         inherit (self.packages.${final.system}) wlo-classification;
       });
     } //
-    flake-utils.lib.eachDefaultSystem (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         projectDir = self;
         # import the packages from nixpkgs
