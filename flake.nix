@@ -5,12 +5,15 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     openapi-checks = {
-      url = "git+https://codeberg.org/joka/nix-openapi-checks";
+      url = "github:openeduhub/nix-openapi-checks";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        nixpkgs-unstable.follows = "nixpkgs";
         flake-utils.follows = "flake-utils";
       };
+    };
+    nltk-data = {
+      url = "github:nltk/nltk_data";
+      flake = false;
     };
   };
 
@@ -61,13 +64,14 @@
                         ] ++ (python-packages-build py-pkgs);
 
         ### create the python package
-        # fetch an external resource for NLTK
-        nltk-stopwords = pkgs.fetchzip {
-          url = "https://github.com/nltk/nltk_data/raw/5db857e6f7df11eabb5e5665836db9ec8df07e28/packages/corpora/stopwords.zip";
-          sha256 = "sha256-tX1CMxSvFjr0nnLxbbycaX/IBnzHFxljMZceX5zElPY=";
-        };
+        # unzip an external resource for NLTK
+        nltk-stopwords = pkgs.runCommand "nltk-stopwords" {} ''
+          mkdir -p $out/corpora
+          ${pkgs.unzip}/bin/unzip ${self.inputs.nltk-data}/packages/corpora/stopwords.zip -d $out/corpora
+        '';
 
         # download the metadata on the bert language model being used
+        # cannot be moved to inputs due to git LFS
         gbert-base = pkgs.fetchgit {
           url = "https://huggingface.co/deepset/gbert-base";
           rev = "e2073f52ebb8dd8b50ed5230a9752e251105c096";
@@ -77,6 +81,7 @@
         };
 
         # download the full wlo-classification model
+        # cannot be moved to inputs due to git LFS
         wlo-classification-model = pkgs.fetchFromGitLab {
           domain = "gitlab.gwdg.de";
           owner = "jopitz";
@@ -94,17 +99,8 @@
           # no tests are available, nix built-in import check fails
           # due to how we handle import of nltk-stopwords
           doCheck = false;
-          # put nltk-stopwords into a directory
-          preBuild = ''
-            ${pkgs.coreutils}/bin/mkdir -p \
-              $out/lib/nltk_data/corpora/stopwords
-
-            ${pkgs.coreutils}/bin/cp -r \
-              ${nltk-stopwords}/* \
-              $out/lib/nltk_data/corpora/stopwords
-          '';
           # make the created folder discoverable for NLTK
-          makeWrapperArgs = ["--set NLTK_DATA $out/lib/nltk_data"];
+          makeWrapperArgs = ["--set NLTK_DATA ${nltk-stopwords}"];
           # replace cli argument with local file
           prePatch = ''
             substituteInPlace src/webservice.py \
@@ -147,7 +143,7 @@
         # checks
         checks = {
           openapi-valid = openapi-checks.openapi-valid {
-            web-bin = "${self.packages.${system}.wlo-classification}/bin/wlo-classification";
+            serviceBin = "${self.packages.${system}.wlo-classification}/bin/wlo-classification";
             memorySize = 4096;
           };
         };
