@@ -59,7 +59,29 @@ def main():
     modelFile = args.model
     prediction = Prediction(modelFile)
 
-    @app.post("/predict_subjects")
+    summary = "Predict the OpenEduHub disciplines of the given text"
+
+    @app.post(
+        "/predict_subjects",
+        summary=summary,
+        description=f"""
+        {summary}
+
+        Parameters
+        ----------
+        text : str
+            The text to be analyzed.
+
+        Returns
+        -------
+        disciplines : list of Discipline
+            The predicted disciplines of the text.
+            This contains the id of the discipline,
+            and a score from 0 to 1.
+        version : str
+            The version of the discipline predictor.
+        """,
+    )
     def predict_subjects_kidra(data: Data) -> Result:
         disciplines_raw = prediction.run(data.text)
         disciplines = [
