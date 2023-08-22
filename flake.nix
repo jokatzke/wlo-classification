@@ -96,17 +96,14 @@
           version = "0.1.0";
           src = projectDir;
           propagatedBuildInputs = (python-packages-build python.pkgs);
-          # no tests are available, nix built-in import check fails
-          # due to how we handle import of nltk-stopwords
-          doCheck = false;
-          # make the created folder discoverable for NLTK
-          makeWrapperArgs = ["--set NLTK_DATA ${nltk-stopwords}"];
-          # replace cli argument with local file
+          # set the folder for NLTK resources
+          # and run the application with the model file already specified
+          makeWrapperArgs = [
+            "--set NLTK_DATA ${nltk-stopwords}"
+            "--add-flags ${wlo-classification-model}"
+          ];
+          # use prefetched external resources
           prePatch = ''
-            substituteInPlace src/webservice.py \
-              --replace "args.model" "\"${wlo-classification-model}\"" \
-              --replace "parser.add_argument(\"model\")" ""
-  
             substituteInPlace src/*.py \
               --replace "deepset/gbert-base" "${gbert-base}"
         '';
