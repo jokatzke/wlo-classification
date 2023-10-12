@@ -24,7 +24,8 @@
         inherit (self.packages.${final.system}) wlo-classification;
       });
     } //
-    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    # jaxlib is currently marked as broken on darwin and aarch64-linux
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       let
         projectDir = self;
         # import the packages from nixpkgs
@@ -33,39 +34,41 @@
           config.allowUnfree = true;
         };
         openapi-checks = self.inputs.openapi-checks.lib.${system};
-        
+
         # the python version we are using
         python = pkgs.python310;
 
         ### create the python installation for the package
         python-packages-build = py-pkgs:
-          with py-pkgs; [jupyter
-                         numpy
-                         scikit-learn
-                         pandas
-                         seaborn
-                         nltk
-                         tensorflow
-                         tensorflow-datasets
-                         fastapi
-                         pydantic
-                         uvicorn
-                         transformers
-                         keras
-                        ];
+          with py-pkgs; [
+            jupyter
+            numpy
+            scikit-learn
+            pandas
+            seaborn
+            nltk
+            tensorflow
+            tensorflow-datasets
+            fastapi
+            pydantic
+            uvicorn
+            transformers
+            keras
+          ];
 
         ### create the python installation for development
         # the development installation contains all build packages,
         # plus some additional ones we do not need to include in production.
         python-packages-devel = py-pkgs:
-          with py-pkgs; [ipython
-                         jupyter
-                         black
-                        ] ++ (python-packages-build py-pkgs);
+          with py-pkgs; [
+            ipython
+            jupyter
+            black
+          ] ++ (python-packages-build py-pkgs);
 
         ### create the python package
         # unzip an external resource for NLTK
-        nltk-stopwords = pkgs.runCommand "nltk-stopwords" {} ''
+        nltk-stopwords = pkgs.runCommand "nltk-stopwords" { } ''
           mkdir -p $out/corpora
           ${pkgs.unzip}/bin/unzip ${self.inputs.nltk-data}/packages/corpora/stopwords.zip -d $out/corpora
         '';
@@ -89,7 +92,7 @@
           rev = "66661ad257969a66af632fc5b184765d0ef95fd8";
           hash = "sha256-CIZAbCH5JUAXOchxSByCxUO/p9jR1B+8CkIOoNOQtiA=";
         };
-        
+
         # build the application itself
         python-app = python.pkgs.buildPythonApplication {
           pname = "wlo-classification";
@@ -106,9 +109,9 @@
           prePatch = ''
             substituteInPlace src/*.py \
               --replace "deepset/gbert-base" "${gbert-base}"
-        '';
+          '';
         };
-        
+
         ### build the docker image
         docker-img = pkgs.dockerTools.buildLayeredImage {
           name = python-app.pname;
@@ -118,7 +121,8 @@
           };
         };
 
-      in rec {
+      in
+      rec {
         # the packages that we can build
         packages = rec {
           wlo-classification = python-app;
