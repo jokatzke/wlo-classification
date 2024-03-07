@@ -41,14 +41,11 @@
         ### create the python installation for the package
         python-packages-build = py-pkgs:
           with py-pkgs; [
-            jupyter
             numpy
             scikit-learn
             pandas
-            seaborn
             nltk
             tensorflow
-            tensorflow-datasets
             fastapi
             pydantic
             uvicorn
@@ -143,9 +140,11 @@
         };
         # checks
         checks = {
-          openapi-valid = openapi-checks.openapi-valid {
-            serviceBin = "${self.packages.${system}.wlo-classification}/bin/wlo-classification";
-            memorySize = 4096;
+          openapi-valid = openapi-checks.test-service {
+            service-bin = "${self.packages.${system}.wlo-classification}/bin/wlo-classification";
+            memory-size = 4 * 1024;
+            service-port = 8080;
+            openapi-domain = "/openapi.json";
           };
         };
       });
