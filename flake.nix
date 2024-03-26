@@ -36,7 +36,7 @@
         openapi-checks = self.inputs.openapi-checks.lib.${system};
 
         # the python version we are using
-        python = pkgs.python310;
+        python = pkgs.python3;
 
         ### create the python installation for the package
         python-packages-build = py-pkgs:
