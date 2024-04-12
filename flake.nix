@@ -11,10 +11,6 @@
         flake-utils.follows = "flake-utils";
       };
     };
-    nltk-data = {
-      url = "github:nltk/nltk_data";
-      flake = false;
-    };
   };
 
   outputs = { self, nixpkgs, flake-utils, ... }:
@@ -24,7 +20,7 @@
         inherit (self.packages.${final.system}) wlo-classification;
       });
     } //
-    # jaxlib is currently marked as broken on darwin and aarch64-linux
+    # tensorflow is currently marked as broken on darwin
     flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
       let
         projectDir = self;
@@ -64,13 +60,7 @@
           ] ++ (python-packages-build py-pkgs);
 
         ### create the python package
-        # unzip an external resource for NLTK
-        nltk-stopwords = pkgs.runCommand "nltk-stopwords" { } ''
-          mkdir -p $out/corpora
-          ${pkgs.unzip}/bin/unzip ${self.inputs.nltk-data}/packages/corpora/stopwords.zip -d $out/corpora
-        '';
-
-        # download the metadata on the bert language model being used
+        # download the metadata on the bert language model being used.
         # cannot be moved to inputs due to git LFS
         gbert-base = pkgs.fetchgit {
           url = "https://huggingface.co/deepset/gbert-base";
@@ -80,7 +70,7 @@
           fetchLFS = false;
         };
 
-        # download the full wlo-classification model
+        # download the full wlo-classification model.
         # cannot be moved to inputs due to git LFS
         wlo-classification-model = pkgs.fetchFromGitLab {
           domain = "gitlab.gwdg.de";
@@ -99,7 +89,7 @@
           # set the folder for NLTK resources
           # and run the application with the model file already specified
           makeWrapperArgs = [
-            "--set NLTK_DATA ${nltk-stopwords}"
+            "--set NLTK_DATA ${pkgs.nltk-data.stopwords}"
             "--add-flags ${wlo-classification-model}"
           ];
           # use prefetched external resources
